@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 	"todo"
 	"todo/pkg/handler"
 	"todo/pkg/repository"
@@ -14,6 +15,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 
+	"github.com/go-co-op/gocron"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
@@ -36,7 +38,7 @@ func main() {
 	}
 
 	if err := godotenv.Load(); err != nil {
-		logrus.Fatalf("error loading env variables: %s", err.Error)
+		logrus.Fatalf("error loading env variables: %s", err.Error())
 	}
 
 	db, err := repository.NewPosgresDB(repository.Config{
@@ -55,6 +57,9 @@ func main() {
 	services := service.NewService(repos)
 	handlers := handler.NewHandler(services)
 
+	scheduler := initScheduler(services)
+	scheduler.StartAsync()
+
 	srv := new(todo.Server)
 	go func () {
 		if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil && err != http.ErrServerClosed {
@@ -69,6 +74,8 @@ func main() {
 
 	logrus.Print("TodoApp shutting down")
 
+	scheduler.Stop()
+
 	if err := srv.Shutdown(context.Background()); err != nil {
 		logrus.Errorf("error occured on server shutting down: %s", err.Error())
 	}
@@ -82,4 +89,20 @@ func initConfig() error {
 	viper.AddConfigPath("configs")
 	viper.SetConfigName("config")
 	return viper.ReadInConfig()
+}
+
+func initScheduler(services *service.Service) *gocron.Scheduler {
+	scheduler := gocron.NewScheduler(time.UTC)
+
+	_, err := scheduler.Every(60).Minutes().Do(func() {
+		if err := services.Authorization.DeleteExpiredRefreshTokens(); err != nil {
+			logrus.Errorf("Error deleting expired tasks: %v", err)
+		} else {
+			logrus.Info("Expired tasks deleted successfully")
+		}
+	})
+	if err != nil {
+		logrus.Fatalf("Error scheduling task: %s", err.Error())
+	}
+	return scheduler
 }

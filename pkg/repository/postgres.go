@@ -12,6 +12,7 @@ const (
 	usersListsTable = "users_lists"
 	todoItemsTable  = "todo_items"
 	listsItemtable  = "lists_items"
+	refreshTokens   = "refresh_tokens"
 )
 
 type Config struct {

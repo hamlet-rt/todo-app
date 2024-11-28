@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"time"
 	"todo"
 
 	"github.com/jmoiron/sqlx"
@@ -27,10 +28,19 @@ type TodoItem interface {
 	Update(userId, itemId int, input todo.UpdateItemInput) error
 }
 
+type Token interface {
+	Create(userID int, token todo.RefreshToken) error
+	Get(token string) (todo.RefreshToken, error)
+	Update(token todo.RefreshToken, id int) error
+	DeleteByUserId(userId int) error
+	DeleteExpired(currentDate time.Time) error
+}
+
 type Repository struct {
 	Authorization
 	TodoList
 	TodoItem
+	Token
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -38,5 +48,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Authorization: NewAuthPostgres(db),
 		TodoList: NewTodoListPostgres(db),
 		TodoItem: NewTodoItemPostgres(db),
+		Token: NewTokenPostgres(db),
 	}
 }

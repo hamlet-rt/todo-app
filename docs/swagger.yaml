@@ -10,6 +10,7 @@ definitions:
       password:
         type: string
       username:
+        description: UserID int `json:"userId" binding:"required"`
         type: string
     required:
     - password
@@ -475,6 +476,34 @@ paths:
       summary: Get all items by list ID
       tags:
       - items
+  /auth/refresh:
+    post:
+      description: refreshToken
+      operationId: refresh-token
+      parameters:
+      - description: Refresh token in the cookie
+        in: header
+        name: refreshToken
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Refresh token not found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Failed to refresh tokens
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      tags:
+      - auth
   /auth/sign-in:
     post:
       description: login

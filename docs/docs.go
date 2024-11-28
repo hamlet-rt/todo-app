@@ -633,6 +633,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/refresh": {
+            "post": {
+                "description": "refreshToken",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "operationId": "refresh-token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Refresh token in the cookie",
+                        "name": "refreshToken",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Refresh token not found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to refresh tokens",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/sign-in": {
             "post": {
                 "description": "login",
@@ -764,6 +806,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "description": "UserID int ` + "`" + `json:\"userId\" binding:\"required\"` + "`" + `",
                     "type": "string"
                 }
             }
